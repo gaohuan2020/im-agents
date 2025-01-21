@@ -1,4 +1,8 @@
-def create_meeting_card(title, date, time, attendees, meeting_id):
+import uuid
+
+
+def create_meeting_card(title, date, time, attendees):
+    meeting_id = "1234567890"
     card = {
         "config": {
             "update_multi": True
@@ -69,7 +73,11 @@ def create_meeting_card(title, date, time, attendees, meeting_id):
                     "size": "medium",
                     "value": {
                         "action_type": "create_meeting",
-                        "meeting_id": meeting_id
+                        "meeting_id": meeting_id,
+                        "title": title,
+                        "date": date,
+                        "time": time,
+                        "attendees": attendees
                     }
                 }]
             }]

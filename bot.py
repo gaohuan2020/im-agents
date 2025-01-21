@@ -14,13 +14,18 @@ from lark_oapi.api.im.v1 import (
     CreateMessageRequest,
     CreateMessageRequestBody,
 )
-
+from lark_oapi.event.callback.model.p2_card_action_trigger import (
+    P2CardActionTrigger,
+    P2CardActionTriggerResponse,
+)
+from lark_oapi.api.calendar.v4 import *
 from card import create_meeting_card
 from agent.graph import create_graph
 
 # Configuration
 lark.APP_ID = "cli_a70711890df9500d"
 lark.APP_SECRET = "pNb5PlWihwFX8C0JOFnpTe0ArfoIbJcr"
+lark.USER_ACCESS_TOKEN = "u-eM3Eifn5FfBq9BzA25Zw5c1kmhX5k1T9Pww05kA80AUZ"
 
 
 class MessageDeduplicator:
@@ -85,8 +90,10 @@ class FeishuBot:
     def _create_event_handler(self) -> lark.EventDispatcherHandler:
         """Create and return the event handler for the bot."""
         return (lark.EventDispatcherHandler.builder(
-            "", "b93PeT3Ts7Q4YTO2q0j4VhjsoEoYaURF"
-        ).register_p2_im_message_receive_v1(self._handle_message).build())
+            "", "b93PeT3Ts7Q4YTO2q0j4VhjsoEoYaURF").
+                register_p2_im_message_receive_v1(
+                    self._handle_message).register_p2_card_action_trigger(
+                        self._handle_card_action).build())
 
     @staticmethod
     def _invoke_graph(graph: Any, message: str) -> Optional[Dict]:
@@ -96,6 +103,57 @@ class FeishuBot:
                                      subgraphs=True):
             last_response = response[-1]
         return last_response
+
+    def _handle_card_action(self, data: P2CardActionTrigger) -> None:
+        action_value = data.event.action
+        if action_value.value.get("action_type") == "create_meeting":
+            title = action_value.value.get("title")
+            attendees = action_value.value.get("attendees")
+            # Parse date and time
+            date = action_value.value.get("date")
+            time = action_value.value.get("time")
+            request: PrimaryCalendarRequest = PrimaryCalendarRequest.builder() \
+            .user_id_type("open_id") \
+            .build()
+            response: PrimaryCalendarResponse = self.client.calendar.v4.calendar.primary(
+                request)
+            if not response.success():
+                lark.logger.error(
+                    f"Failed to get primary calendar: {response.msg}")
+            calendar_id = response.data.calendars[0].calendar.calendar_id
+            # Create calendar event
+            request: CreateCalendarEventRequest = CreateCalendarEventRequest.builder() \
+                .calendar_id(calendar_id) \
+                .user_id_type("open_id") \
+                .request_body(CalendarEvent.builder()
+                    .summary(title)
+                    .description(title)
+                    .need_notification(False)
+                    .start_time(TimeInfo.builder()
+                        .date(date)
+                        .timestamp("1602504000")
+                        .timezone("Asia/Shanghai")
+                        .build())
+                    .end_time(TimeInfo.builder()
+                        .date(date)
+                        .timestamp("1602504000")
+                        .timezone("Asia/Shanghai")
+                        .build())
+                    .visibility("default")
+                    .attendee_ability("can_see_others")
+                    .free_busy_status("busy")
+                    .build()) \
+                .build()
+
+            # Add event to calendar
+            option = lark.RequestOption.builder().user_access_token(
+                "u-eM3Eifn5FfBq9BzA25Zw5c1kmhX5k1T9Pww05kA80AUZ").build()
+            response: CreateCalendarResponse = self.client.calendar.v4.calendar.create(
+                request, option)
+            if not response.success():
+                lark.logger.error(
+                    f"Failed to create calendar event: {response.msg}")
+            return
 
     def _handle_message(self, data: P2ImMessageReceiveV1) -> None:
         """
