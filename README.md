@@ -11,16 +11,6 @@ A Feishu (飞书) bot implementation that provides AI-powered chat capabilities 
 - 🎯 Multi-skill system (chat, meeting management)
 - 🗃️ Interactive card interfaces for meeting creation
 
-## Project Structure
-├── agent/
-│ ├── supervisor.py # Main agent supervisor
-│ └── skills/
-│ ├── chitchat.py # Chitchat handling
-│ └── meeting.py # Meeting management
-├── bot.py # Main bot implementation
-├── card.py # Card template generation
-└── requirements.txt # Project dependencies
-
 ## Prerequisites
 
 - Python 3.8+
