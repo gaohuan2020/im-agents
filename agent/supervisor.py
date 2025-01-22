@@ -22,6 +22,12 @@ system_prompt = (
     "EXAMPLE JSON OUTPUT: "
     "{"
     "    next: \"chitcaht\" "
+    "}"
+    "EXAMPLE Input: "
+    "今天gen ai的新闻有哪些 "
+    "EXAMPLE JSON OUTPUT: "
+    "{"
+    "    next: \"news\" "
     "}")
 
 

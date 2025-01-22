@@ -102,6 +102,7 @@ class FeishuBot:
         for response in graph.stream({"messages": [("user", message)]},
                                      subgraphs=True):
             last_response = response[-1]
+            lark.logger.debug(last_response)
         return last_response
 
     def _handle_card_action(self, data: P2CardActionTrigger) -> None:
@@ -202,7 +203,8 @@ class FeishuBot:
             request = self._create_meeting_request(data, agent_response[skill])
         elif skill == "chitchat":
             request = self._create_chat_request(data, agent_response[skill])
-
+        if skill == "news":
+            request = self._create_news_request(data, agent_response[skill])
         if request:
             response = self.client.im.v1.chat.create(request)
             if not response.success():
@@ -224,6 +226,18 @@ class FeishuBot:
                 CreateMessageRequestBody.builder().receive_id(
                     data.event.sender.sender_id.open_id).msg_type(
                         "interactive").content(card_content).build()).build())
+
+    def _create_news_request(self, data: P2ImMessageReceiveV1,
+                             skill_response: Dict) -> CreateMessageRequest:
+        """Create a message request for chat responses."""
+        text_content = json.dumps(
+            {"text": f'{skill_response["messages"][-1].content}'})
+
+        return (CreateMessageRequest.builder().receive_id_type(
+            "chat_id").request_body(
+                CreateMessageRequestBody.builder().receive_id(
+                    data.event.message.chat_id).msg_type("text").content(
+                        text_content).build()).build())
 
     def _create_chat_request(self, data: P2ImMessageReceiveV1,
                              skill_response: Dict) -> CreateMessageRequest:

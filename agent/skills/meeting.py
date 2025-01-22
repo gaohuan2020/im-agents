@@ -1,12 +1,7 @@
 import json
-from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, START, END
-from langgraph.prebuilt import create_react_agent
 from agent.model import llm
-from langgraph.types import Command
-from agent.supervisor import State
 from langgraph.graph import MessagesState, END
-from typing import Literal
 from typing_extensions import TypedDict
 from typing import Annotated
 from langgraph.graph.message import add_messages
@@ -112,7 +107,6 @@ def create_meeting(state: MeetingState):
     ] + state["messages"]
     response = llm.with_structured_output(MeetingInformationExtraction,
                                           method="json_mode").invoke(messages)
-    print(response)
     return {
         "messages": [{
             "role": "assistant",
